@@ -106,15 +106,20 @@ describe Event do
         :eventable_attributes => nil,
         :user => @author
       }
-      
 
-      Dependencies.remove_constant('Event') rescue Exception
+      ActiveSupport::Dependencies.remove_constant('Event')
       ActsAsEventable::Options.event_belongs_to_user_options[:class_name] = 'Author'
-      require 'event'
+      load File.join(File.dirname(__FILE__),'../lib/event.rb')
     end
 
     it "should create a new instance given valid attributes" do
       Event.create!(@valid_event_attributes)
+    end
+    
+    after(:each) do
+      ActiveSupport::Dependencies.remove_constant('Event')
+      ActsAsEventable::Options.event_belongs_to_user_options.delete(:class_name)
+      load File.join(File.dirname(__FILE__),'../lib/event.rb')
     end
   end
 end

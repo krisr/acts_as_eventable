@@ -1,1 +1,3 @@
 rdoc/*
+spec/db/*.db
+spec/debug.log

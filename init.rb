@@ -5,6 +5,7 @@ require 'acts_as_eventable_options'
 require 'acts_as_eventable_action_controller'
 require 'acts_as_eventable_active_record'
 
+puts "Loading acts_as_eventable"
 ActiveRecord::Base.send(:include, ActsAsEventable::ActiveRecord)
 ActionController::Base.send(:include, ActsAsEventable::ActionController)
 

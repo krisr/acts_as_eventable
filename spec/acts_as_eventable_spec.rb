@@ -1,15 +1,6 @@
 require File.dirname(__FILE__) + '/spec_helper'
 
-require File.dirname(__FILE__) + '/spec_helper'
 
-describe ActsAsEventable do
-  it "should mixin successfully" do
-    Form.acts_as_eventable
-    Field.acts_as_eventable
-  end
-end
-
-# TODO: still need to test update with nested records
 
 describe ActsAsEventable do
   include UserSpecHelper

@@ -6,16 +6,16 @@ rescue LoadError
 end
 
 # Unload rails app load paths
-Dependencies.load_paths.reject! { |path| path =~ /\/app(\/|$)/ }
-Dependencies.load_once_paths.reject! { |path| path =~ /\/app(\/|$)/ }
+ActiveSupport::Dependencies.load_paths.reject! { |path| path =~ /\/app(\/|$)/ }
+ActiveSupport::Dependencies.load_once_paths.reject! { |path| path =~ /\/app(\/|$)/ }
 
-plugin_spec_dir = File.dirname(__FILE__)
+plugin_spec_dir = File.expand_path(File.dirname(__FILE__))
 ActiveRecord::Base.logger = Logger.new(plugin_spec_dir + "/debug.log")
 
 database = YAML::load(IO.read(plugin_spec_dir + "/db/database.yml"))[ENV["DB"] || "sqlite3"]
 
-# clear the database (this will only work with sqllite
-dbfile = database[:dbfile]
+# clear the database (this will only work with sqllite)
+dbfile = File.join(plugin_spec_dir, %w(.. .. .. ..), database[:dbfile])
 File.delete(dbfile) if File.exist?(dbfile)
 
 ActiveRecord::Base.establish_connection(database)
@@ -24,7 +24,7 @@ load(File.join(plugin_spec_dir, "db", "schema.rb"))
 
 # ensure all the models below aren't already loaded by the app
 %w(User Author Form Field).each do |klass|
-  Dependencies.remove_constant(klass) rescue Exception
+  ActiveSupport::Dependencies.remove_constant(klass) rescue Exception
 end
 
 class User < ActiveRecord::Base
@@ -41,6 +41,8 @@ class Form < ActiveRecord::Base
   validates_presence_of :title
   validates_length_of :title, :maximum => 255, :allow_blank => true
   
+  acts_as_eventable
+  
   has_many :fields, :dependent => :destroy
 end
 
@@ -50,6 +52,8 @@ class Field < ActiveRecord::Base
   validates_presence_of :name
   validates_length_of :name, :maximum => 255, :allow_blank => true
   validates_length_of :value, :maximum => 255, :allow_blank => true
+  
+  acts_as_eventable
 end
 
 module AuthorSpecHelper
@@ -78,4 +82,3 @@ module EventSpecHelper
   def valid_event_attributes
   end
 end
-

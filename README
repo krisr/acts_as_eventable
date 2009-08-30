@@ -2,4 +2,23 @@
 
 ActsAsEventable makes it easy to log events corresponding to actions taken on active record models.
 
+== Usage
+
+in your controller (typically application_controller)
+
+class FooController 
+  record_events
+  
+  # or 
+  
+  record_events lambda { something_that_returns_a_user }
+end
+
+in your model
+
+class FooModel
+  acts_as_eventable
+end
+
+
 Copyright (c) 2009 Kris Rasmussen, released under the MIT license

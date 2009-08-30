@@ -8,24 +8,28 @@ module ActsAsEventable
     
     module ActsMethods
       def acts_as_eventable(options={})
-        write_inheritable_attribute :acts_as_eventable_options, options
-        class_inheritable_reader :acts_as_eventable_options
+        if self.respond_to?(:acts_as_eventable_options)
+          raise "acts_as_eventable cannot be used twice on the same model"
+        else
+          write_inheritable_attribute :acts_as_eventable_options, options
+          class_inheritable_reader :acts_as_eventable_options
         
-        has_many :events, :as => :eventable, :order => 'id desc'
+          has_many :events, :as => :eventable, :order => 'id desc'
         
-        before_save :event_build
-        after_save :event_save
-        before_destroy :event_destroy # use before instead of after in case we want to access association before they are destroyed
+          before_save :event_build
+          after_save :event_save
+          before_destroy :event_destroy # use before instead of after in case we want to access association before they are destroyed
         
-        include BatchingMethods
-        include InstanceMethods
-        extend ClassMethods
+          include BatchingMethods
+          include InstanceMethods
+          extend ClassMethods
         
-        # We need to alias these method chains 
-        # to manage batch events
-        alias_method_chain :save,            :batch
-        alias_method_chain :save!,           :batch
-        alias_method_chain :destroy,         :batch
+          # We need to alias these method chains 
+          # to manage batch events
+          alias_method_chain :save,            :batch
+          alias_method_chain :save!,           :batch
+          alias_method_chain :destroy,         :batch
+        end
       end
     end
     
