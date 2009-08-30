@@ -20,7 +20,6 @@ class ActsAsEventableMigration < ActiveRecord::Migration
     
     add_index :events, [:eventable_type, :eventable_id]
     add_index :events, [:batch_parent_id, :user_id]
-    add_index :events, :batch_parent_id
   end
   
   def self.down
