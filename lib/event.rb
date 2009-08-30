@@ -95,8 +95,6 @@ class Event < ActiveRecord::Base
     end
   end
   
-  
-  
   named_scope :batched, :conditions => {:batch_parent_id => nil}
   named_scope :by_batch, lambda {|batch_parent_id| {:conditions => {:batch_parent_id => batch_parent_id}}}
   named_scope :by_user, lambda {|user| {:conditions => {:user_id => user.id}}}
@@ -141,7 +139,6 @@ class Event < ActiveRecord::Base
   def self.event_user
     eventable_state[:eventable_event_user]
   end
-  
   
   def self.eventable_state
     Thread.current['eventable_state'] ||= {}
