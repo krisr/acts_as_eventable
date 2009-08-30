@@ -1,0 +1,5 @@
+== ActsAsEventable
+
+ActsAsEventable makes it easy to log events corresponding to actions taken on active record models.
+
+Copyright (c) 2009 Kris Rasmussen, released under the MIT license
