@@ -7,22 +7,23 @@ module ActsAsEventable
     end
     
     module ActsMethods
-      def acts_as_eventable(options={})
+      def acts_as_eventable(options={}, &block)
         if self.respond_to?(:acts_as_eventable_options)
           raise "acts_as_eventable cannot be used twice on the same model"
         else
+          options[:block] = block
+          
           write_inheritable_attribute :acts_as_eventable_options, options
           class_inheritable_reader :acts_as_eventable_options
         
           has_many :events, :as => :eventable, :order => 'id desc'
         
-          before_save :event_build
-          after_save :event_save
+          after_update :event_update
+          after_create :event_create
           before_destroy :event_destroy # use before instead of after in case we want to access association before they are destroyed
         
           include BatchingMethods
           include InstanceMethods
-          extend ClassMethods
         
           # We need to alias these method chains 
           # to manage batch events
@@ -30,15 +31,6 @@ module ActsAsEventable
           alias_method_chain :save!,           :batch
           alias_method_chain :destroy,         :batch
         end
-      end
-    end
-    
-    module ClassMethods
-      # This is mainly here so we know that we
-      # can detect if something is eventable,
-      # but also as a convience
-      def event_user
-        Event.event_user
       end
     end
     
@@ -74,7 +66,7 @@ module ActsAsEventable
         end
         
         # set the batch size of the parent
-        Event.update_all({:batch_size=>batch_size},{:id=>batch_parent_id}) if batch_parent_id 
+        ::Event.update_all({:batch_size=>batch_size},{:id=>batch_parent_id}) if batch_parent_id 
       end
       
       def batch(&block)
@@ -115,17 +107,10 @@ module ActsAsEventable
       
       # This is to be used for recording arbitrary events as necessary
       # like when a post is published, or a user logs in.
-      def record_event!(action, event_user=nil)
-        event_user ||= self.class.event_user
-        
-        raise "Cannot record an event without an event user!" unless event_user
+      def record_event!(action)
+        event = build_event(action)
         raise "Cannot record an event on new records" if new_record?
-        
-        @event = Event.new
-        @event.action = action
-        @event.user = event_user
-        @event.eventable = self
-        @event.save!
+        event.save!
       end
       
       private
@@ -134,39 +119,45 @@ module ActsAsEventable
       # new destroy event that also captures the eventable_attributes 
       # so that the record can still be shown in the event log.
       def event_destroy
-        self.events.destroy_all
-
-        if event_user = self.class.event_user
-          @event = Event.new
-          @event.action = 'destroyed'
-          @event.eventable = self
-          @event.eventable_attributes = self.attributes
-          @event.user = event_user
-          batch_events[self] = @event
+        transaction do
+          self.events.destroy_all
+          event = build_event('destroyed')
+          event.eventable_attributes = self.attributes
+          batch_events[self] = event
         end
+      end
+      
+      # Saves the event after assigning eventable
+      def event_update
+        event = build_event('updated')
+        updated_if = acts_as_eventable_options[:updated_if]
+        if !updated_if || updated_if.call(self)
+          batch_events[self] = event
+        end
+      end
+      
+      def event_create
+        event = build_event('created')
+        batch_events[self] = event
       end
       
       # Builds the initial event and sets the default
       # action type. Does not assign eventable yet because
       # it may not have been saved if this was a new record.
-      def event_build
-        if event_user = self.class.event_user
-          @event = Event.new
-          @event.action = case
-            when self.new_record? then 'created'
-            else 'updated'
-          end
-          @event.user = event_user
+      def build_event(action)
+        event = ::Event.new
+        event.eventable = self
+        event.action = action
+        
+        # Allow the eventable model class to modify the event record before it
+        # is saved to do things like assign the current user
+        if block = self.class.acts_as_eventable_options[:block]
+          block.call(self, event)
         end
-      end
-      
-      # Saves the event after assigning eventable
-      def event_save
-        updated_if = acts_as_eventable_options[:updated_if]
-        if @event && !(@event.action == 'updated' && updated_if && !updated_if.call(self))
-          @event.eventable = self
-          batch_events[self] = @event
-        end
+        
+        raise "Cannot record an event without an event user!" if event.user.nil?
+        
+        return event
       end
     end
     
