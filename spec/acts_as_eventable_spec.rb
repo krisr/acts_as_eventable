@@ -116,6 +116,171 @@ describe ActsAsEventable do
       end
     end
     
+    describe "with nested events" do
+      before :each do
+        Field.current_user = Form.current_user
+        @event_count = Event.count
+        @form = Form.new(valid_form_attributes)
+        @field = @form.fields.build(valid_field_attributes)
+        @form.save!
+        Field.current_user = nil
+      end
+      
+      it "should create two events total" do
+        (Event.count - @event_count).should == 2
+      end
+      
+      it "should create an event for each model" do
+        @form.events.first.should_not be_nil
+        @field.events.first.should_not be_nil
+      end
+      
+      it "should create the parent event and then the child event" do
+        @field.events.first.id.should > @form.events.first.id
+      end
+      
+      it "should not set batch_parent_id on the parent event" do
+        @form.events.first.batch_parent_id.should be_nil
+      end
+      
+      it "should set the batch_size of the field event to 1 since there were no children events for it" do
+        @field.events.first.batch_size.should == 1
+      end
+      
+      it "should set the batch_size of the form event to 2 since it has a child event" do
+        @form.events.first.batch_size.should == 2
+      end
+      
+      it "should make the first event a child_batch_event of the parent event" do
+        @form.events.first.child_batch_events.first.should == @field.events.first
+      end
+      
+        
+      describe "after destroying the parent resource" do
+        before(:each) do
+          @base_destory_event_count = Event.count(:conditions=>{:action=>'destroyed'})
+          Field.current_user = Form.current_user
+          @form.destroy
+          Field.current_user = nil
+        end
+        
+        it "should create two new destroy events" do
+          (Event.count(:conditions=>{:action=>'destroyed'}) - @base_destory_event_count).should == 2
+        end
+        
+        it "should create the form destroy event before the field destroy event" do
+          Event.find(:all,:order=>'id desc')[0].eventable_type.should == "Field"
+          Event.find(:all,:order=>'id desc')[1].eventable_type.should == "Form"
+        end
+        
+        it "should not set batch_parent_id on the Form event" do
+          Event.find(:all,:order=>'id desc')[1].batch_parent_id.should == nil
+        end
+        
+        it "should set batch_parent_id on the Field event to that of the Form event" do
+          Event.find(:all,:order=>'id desc')[0].batch_parent_id.should == Event.find(:all,:order=>'id desc')[1].id
+        end
+        
+        it "should set the batch_size on the Form event to 2" do
+          Event.find(:all,:order=>'id desc')[1].batch_size.should == 2
+        end
+  
+        it "should set the batch_size on the Field event to 1" do
+          Event.find(:all,:order=>'id desc')[0].batch_size.should == 1
+        end
+  
+        it "should make the field event a child_batch_event" do
+          Event.find(:all,:order=>'id desc')[1].child_batch_events.first.should == Event.find(:all,:order=>'id desc')[0]
+        end
+      end
+    end
+    
+      #   describe "with nested events" do
+      #     before(:each) do
+      #       @base_event_count = Event.count
+      #       @form = Form.new(valid_form_attributes)
+      #       @field = @form.fields.build(valid_field_attributes)
+      #       @form.save!
+      #     end
+      #     
+      #     it "should create two events total" do
+      #       (Event.count - @base_event_count).should == 2
+      #     end
+      #     
+      #     it "should create an event for the form" do
+      #       @form.events.first.should_not == nil
+      #     end
+      #     
+      #     it "should create an event for the field" do
+      #       @field.events.first.should_not == nil
+      #     end
+      #     
+      #     it "should create the form event and then the field event" do
+      #       @field.events.first.id.should > @form.events.first.id
+      #     end
+      #     
+      #     it "should not set batch_parent_id on the Form event" do
+      #       @form.events.first.batch_parent_id.should == nil
+      #     end
+      #     
+      #     it "should set batch_parent_id on the Field event" do
+      #       @field.events.first.batch_parent_id.should == @form.events.first.id
+      #     end
+      #     
+      #     it "should set the batch_size on the Form event to 2" do
+      #       @form.events.first.batch_size.should == 2
+      #     end
+      #     
+      #     it "should set the batch_size on the Field event to 1" do
+      #       @field.events.first.batch_size.should == 1
+      #     end
+      #     
+      #     it "should make the field event a child_batch_event" do
+      #       @form.events.first.child_batch_events.first.should == @field.events.first
+      #     end
+      #     
+      #     describe "after destroying the parent resource" do
+      #       before(:each) do
+      #         @base_destory_event_count = Event.count(:conditions=>{:action=>'destroyed'})
+      #         @form.destroy
+      #       end
+      #       
+      #       it "should create two new destroy events" do
+      #         (Event.count(:conditions=>{:action=>'destroyed'}) - @base_destory_event_count).should == 2
+      #       end
+      #       
+      #       it "should create the form destroy event before the field destroy event" do
+      #         Event.find(:all,:order=>'id desc')[0].eventable_type.should == "Field"
+      #         Event.find(:all,:order=>'id desc')[1].eventable_type.should == "Form"
+      #       end
+      #       
+      #       it "should not set batch_parent_id on the Form event" do
+      #         Event.find(:all,:order=>'id desc')[1].batch_parent_id.should == nil
+      #       end
+      #       
+      #       it "should set batch_parent_id on the Field event to that of the Form event" do
+      #         Event.find(:all,:order=>'id desc')[0].batch_parent_id.should == Event.find(:all,:order=>'id desc')[1].id
+      #       end
+      #       
+      #       it "should set the batch_size on the Form event to 2" do
+      #         Event.find(:all,:order=>'id desc')[1].batch_size.should == 2
+      #       end
+      # 
+      #       it "should set the batch_size on the Field event to 1" do
+      #         Event.find(:all,:order=>'id desc')[0].batch_size.should == 1
+      #       end
+      # 
+      #       it "should make the field event a child_batch_event" do
+      #         Event.find(:all,:order=>'id desc')[1].child_batch_events.first.should == Event.find(:all,:order=>'id desc')[0]
+      #       end
+      #     end
+      #   end
+      #   
+      #   after(:each) do
+      #     Form.current_user = nil
+      #   end
+    
+    
     after do
       Form.current_user = nil
     end
@@ -192,6 +357,7 @@ describe ActsAsEventable do
       end
     end
   end
+  
 
     
     #   
