@@ -155,8 +155,6 @@ module ActsAsEventable
           block.call(self, event)
         end
         
-        raise "Cannot record an event without an event user!" if event.user.nil?
-        
         return event
       end
     end

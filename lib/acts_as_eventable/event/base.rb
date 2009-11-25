@@ -19,7 +19,7 @@ module ActsAsEventable
           # Validation
           # ----------
 
-          validates_presence_of :action, :eventable_type, :user_id # we do not require eventable_id since we won't have it on destroy actions
+          validates_presence_of :action, :eventable_type # we do not require eventable_id since we won't have it on destroy actions
           validates_length_of :action, :maximum => 255, :allow_blank => true
           validates_presence_of :eventable_id, :if => Proc.new {|e| e.action != 'destroyed'}
           validates_presence_of :eventable_attributes, :if => Proc.new {|e| e.action == 'destroyed'}

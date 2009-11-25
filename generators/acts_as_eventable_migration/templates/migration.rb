@@ -4,7 +4,7 @@ class ActsAsEventableMigration < ActiveRecord::Migration
       t.string :eventable_type, :null => false
       t.integer :eventable_id
       
-      t.integer :user_id, :null => false
+      t.integer :user_id
       
       # this is for when the action is destroy
       t.text :eventable_attributes
