@@ -28,7 +28,7 @@ load(File.join(plugin_spec_dir, "db", "schema.rb"))
 end
 
 class Event < ActiveRecord::Base
-  include ActsAsEventable::Event::Base 
+  include ActsAsEventable::Event::Base
 end
 
 class User < ActiveRecord::Base
@@ -44,39 +44,39 @@ end
 class Form < ActiveRecord::Base
   validates_presence_of :title
   validates_length_of :title, :maximum => 255, :allow_blank => true
-  
+
   @@current_user = nil
   def self.current_user=(user)
     @@current_user = user
   end
-  
+
   def self.current_user
     @@current_user || nil
   end
-  
+
   acts_as_eventable do |form, event|
     event.user = form.class.current_user
   end
-  
+
   has_many :fields, :dependent => :destroy
 end
 
 class Field < ActiveRecord::Base
   belongs_to :form
-  
+
   validates_presence_of :name
   validates_length_of :name, :maximum => 255, :allow_blank => true
   validates_length_of :value, :maximum => 255, :allow_blank => true
-  
+
   @@current_user = nil
   def self.current_user=(user)
     @@current_user = user
   end
-  
+
   def self.current_user
     @@current_user
   end
-  
+
   acts_as_eventable do |field, event|
     event.user = field.class.current_user
   end
@@ -98,7 +98,7 @@ module FormSpecHelper
   def valid_form_attributes
     {:title=>"Form 1"}
   end
-  
+
   def valid_field_attributes
     {:name=>"Field 1", :value=>'Value 1'}
   end

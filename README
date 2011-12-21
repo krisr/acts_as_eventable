@@ -6,11 +6,11 @@ ActsAsEventable makes it easy to log events corresponding to actions taken on ac
 
 in your controller (typically application_controller)
 
-class FooController 
+class FooController
   record_events
-  
-  # or 
-  
+
+  # or
+
   record_events lambda { something_that_returns_a_user }
 end
 
