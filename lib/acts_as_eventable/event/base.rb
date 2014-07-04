@@ -3,7 +3,7 @@ module ActsAsEventable
     module Base
       def self.included(base)
         base.class_eval do
-        
+
           # Attribute Modifiers
           # -------------------
 
@@ -28,7 +28,7 @@ module ActsAsEventable
           # ---------
 
           before_save :clear_eventable_id, :if => Proc.new {|e| e.action == "destroyed"}
-          
+
           # Finders
           # -------
 
@@ -37,19 +37,19 @@ module ActsAsEventable
           named_scope :by_user, lambda {|user| {:conditions => {:user_id => user.id}}}
           named_scope :with_users, :include => :user
           named_scope :with_eventables, :include => :eventable
-          
+
           extend ClassMethods
-        
+
           # This is redefined so that it returns the eventable
           # object even if it has been destroyed by reconstructing
           # it from the eventable attributes that were saved
           # on the event
           alias_method :eventable_when_not_destroyed, :eventable
-          
+
           include InstanceMethods
         end
       end
-      
+
       module ClassMethods
         # This will replace the way rails includes the eventable
         # association with the inject_eventables method below.
@@ -92,7 +92,7 @@ module ActsAsEventable
           end
         end
 
-        private 
+        private
 
         # If options contains includes for eventable, removes it
         # and return true. Otherwise, returns false.
@@ -100,9 +100,9 @@ module ActsAsEventable
           inject = false
           if options
             case includes = options[:include]
-              when Array then 
+              when Array then
                 inject = !includes.delete(:eventable).nil?
-              when Symbol 
+              when Symbol
                 if includes == :eventable
                   options.delete(:include)
                   inject = true
@@ -112,7 +112,7 @@ module ActsAsEventable
           return inject
         end
       end
-      
+
       module InstanceMethods
         def eventable
           if eventable_id.nil? && !eventable_attributes.nil?
@@ -121,15 +121,15 @@ module ActsAsEventable
             eventable_when_not_destroyed
           end
         end
-  
+
         private
-  
+
         # Used to clear the eventable id on destroy events
         def clear_eventable_id
           self.eventable_id = nil
         end
       end
-      
+
     end # Base
   end # Event
 end # ActsAsEventable
